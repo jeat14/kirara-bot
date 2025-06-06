@@ -1,16 +1,18 @@
 from telegram.ext import Application, CommandHandler
 import logging
 import sys
+import json
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "8007112570:AAEO65r0kq6nGD0UrFhIltcLZy-EVDVHOiO"
-ADMIN_USERNAME = "packoa"
+TOKEN = "8007112570:AAEO65r0kq6nGD0UrFhIltcLZy-EVDVHOiY"
+
 
 # Store chat IDs
 CHATS = set()
