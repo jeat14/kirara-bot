@@ -20,6 +20,9 @@ app = web.Application()
 async def handle_webhook(request):
     try:
         data = await request.json()
+        # Make sure application is initialized
+        if not application._initialized:
+            await application.initialize()
         await application.process_update(data)
         return web.Response(status=200)
     except Exception as e:
@@ -67,18 +70,23 @@ async def main():
     # Initialize bot
     application = Application.builder().token(TOKEN).build()
     
+    # Initialize the application
+    await application.initialize()
+    await application.start()
+    
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("broadcast", broadcast))
     application.add_handler(CommandHandler("stats", stats))
     
     # Setup webhook
-    webhook_url = os.environ.get("RENDER_EXTERNAL_URL")
+    webhook_url = "https://kirara-bot-2.onrender.com"
     webhook_path = f"/webhook/{TOKEN}"
     await application.bot.set_webhook(url=f"{webhook_url}{webhook_path}")
+    logger.info(f"Webhook set to {webhook_url}{webhook_path}")
     
     # Add routes
-    app.router.add_post(f"/webhook/{TOKEN}", handle_webhook)
+    app.router.add_post(webhook_path, handle_webhook)
     app.router.add_get("/", lambda r: web.Response(text="Bot is running!"))
     
     # Start web server
