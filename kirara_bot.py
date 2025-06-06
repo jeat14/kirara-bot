@@ -1,6 +1,5 @@
 from telegram.ext import Application, CommandHandler
 import logging
-import os
 import sys
 
 # Setup logging
@@ -56,10 +55,6 @@ async def stats(update, context):
 
 def main():
     try:
-        # Delete webhook first
-        import requests
-        requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook")
-        
         # Initialize bot with specific settings
         application = (
             Application.builder()
@@ -73,12 +68,11 @@ def main():
         application.add_handler(CommandHandler("broadcast", broadcast))
         application.add_handler(CommandHandler("stats", stats))
         
-        # Start the bot with specific settings
+        # Start the bot
         logger.info("Starting bot...")
         application.run_polling(
             drop_pending_updates=True,
-            allowed_updates=["message"],
-            stop_signals=None
+            allowed_updates=["message"]
         )
         
     except Exception as e:
