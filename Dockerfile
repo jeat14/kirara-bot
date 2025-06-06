@@ -1,8 +1,16 @@
-FROM python:3.10-slim
+FROM python:3.9-slim-buster
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY kirara_bot.py .
-ENV PORT=10000
-EXPOSE 10000
-CMD ["python", "kirara_bot.py"]
+
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY . .
+
+CMD ["python3", "kirara_bot.py"]
