@@ -25,9 +25,7 @@ async def start(update, context):
     CHATS.add(chat_id)
     
     if update.effective_user.username == ADMIN_USERNAME:
-        await update.message.reply_text("Admin Commands:
-/broadcast - Send message
-/stats - View stats")
+        await update.message.reply_text("Admin Commands:\n/broadcast - Send message\n/stats - View stats")
     else:
         await update.message.reply_text("Welcome!")
 
@@ -90,7 +88,7 @@ async def main():
     print(f"Bot is running on port {PORT}")
     
     # Keep the app running
-    await web.TCPSite(runner).start()
+    await site.start()
 
 if __name__ == "__main__":
     import asyncio
