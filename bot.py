@@ -1,6 +1,11 @@
 from telegram.ext import Application, CommandHandler
 from aiohttp import web
 import os
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 TOKEN = "8007112570:AAEO65r0kq6nGD0UrFhIltcLZy-EVDVHOiY"
 ADMIN_USERNAME = "packoa"
@@ -12,12 +17,13 @@ CHATS = set()
 # Create web app
 app = web.Application()
 
-async def webhook_handler(request):
+async def handle_webhook(request):
     try:
-        update = await request.json()
-        await application.process_update(update)
+        data = await request.json()
+        await application.process_update(data)
         return web.Response(status=200)
-    except:
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
         return web.Response(status=500)
 
 async def start(update, context):
@@ -55,12 +61,6 @@ async def stats(update, context):
         return
     await update.message.reply_text(f"Total users: {len(CHATS)}")
 
-async def setup_webhook():
-    webhook_url = os.environ.get("RENDER_EXTERNAL_URL", "https://your-app-name.onrender.com")
-    webhook_path = f"/webhook/{TOKEN}"
-    await application.bot.set_webhook(url=f"{webhook_url}{webhook_path}")
-    return webhook_path
-
 async def main():
     global application
     
@@ -73,23 +73,25 @@ async def main():
     application.add_handler(CommandHandler("stats", stats))
     
     # Setup webhook
-    webhook_path = await setup_webhook()
-    app.router.add_post(webhook_path, webhook_handler)
+    webhook_url = os.environ.get("RENDER_EXTERNAL_URL")
+    webhook_path = f"/webhook/{TOKEN}"
+    await application.bot.set_webhook(url=f"{webhook_url}{webhook_path}")
     
-    # Setup health check
+    # Add routes
+    app.router.add_post(f"/webhook/{TOKEN}", handle_webhook)
     app.router.add_get("/", lambda r: web.Response(text="Bot is running!"))
     
     # Start web server
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
-    
-    print(f"Bot is running on port {PORT}")
     await site.start()
     
-    # Keep the application running
+    logger.info(f"Bot started on port {PORT}")
+    
+    # Keep alive
     while True:
-        await asyncio.sleep(3600)  # Sleep for an hour
+        await asyncio.sleep(3600)
 
 if __name__ == "__main__":
     import asyncio
