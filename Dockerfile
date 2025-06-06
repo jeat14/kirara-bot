@@ -1,7 +1,6 @@
 FROM python:3.10-slim
-WORKDIR /opt/render/project/src
-COPY . .
+WORKDIR /app
+COPY requirements.txt .
 RUN pip install -r requirements.txt
-ENV PORT=10000
-EXPOSE 10000
-CMD ["python3", "bot.py"]
+COPY kirara_bot.py .
+CMD ["python", "kirara_bot.py"]
