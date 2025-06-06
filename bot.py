@@ -83,12 +83,13 @@ async def main():
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
-    await site.start()
     
     print(f"Bot is running on port {PORT}")
-    
-    # Keep the app running
     await site.start()
+    
+    # Keep the application running
+    while True:
+        await asyncio.sleep(3600)  # Sleep for an hour
 
 if __name__ == "__main__":
     import asyncio
