@@ -1,16 +1,33 @@
 from telegram.ext import Application, CommandHandler
+from aiohttp import web
+import os
 
 TOKEN = "8007112570:AAEO65r0kq6nGD0UrFhIltcLZy-EVDVHOiY"
 ADMIN_USERNAME = "packoa"
+PORT = int(os.environ.get("PORT", 10000))
 
+# Store chat IDs
 CHATS = set()
+
+# Create web app
+app = web.Application()
+
+async def webhook_handler(request):
+    try:
+        update = await request.json()
+        await application.process_update(update)
+        return web.Response(status=200)
+    except:
+        return web.Response(status=500)
 
 async def start(update, context):
     chat_id = update.effective_chat.id
     CHATS.add(chat_id)
     
     if update.effective_user.username == ADMIN_USERNAME:
-        await update.message.reply_text("Admin Commands:\n/broadcast - Send message\n/stats - View stats")
+        await update.message.reply_text("Admin Commands:
+/broadcast - Send message
+/stats - View stats")
     else:
         await update.message.reply_text("Welcome!")
 
@@ -40,15 +57,41 @@ async def stats(update, context):
         return
     await update.message.reply_text(f"Total users: {len(CHATS)}")
 
-def main():
-    app = Application.builder().token(TOKEN).build()
+async def setup_webhook():
+    webhook_url = os.environ.get("RENDER_EXTERNAL_URL", "https://your-app-name.onrender.com")
+    webhook_path = f"/webhook/{TOKEN}"
+    await application.bot.set_webhook(url=f"{webhook_url}{webhook_path}")
+    return webhook_path
+
+async def main():
+    global application
     
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("broadcast", broadcast))
-    app.add_handler(CommandHandler("stats", stats))
+    # Initialize bot
+    application = Application.builder().token(TOKEN).build()
     
-    print("Bot running...")
-    app.run_polling(poll_interval=1.0)
+    # Add handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("broadcast", broadcast))
+    application.add_handler(CommandHandler("stats", stats))
+    
+    # Setup webhook
+    webhook_path = await setup_webhook()
+    app.router.add_post(webhook_path, webhook_handler)
+    
+    # Setup health check
+    app.router.add_get("/", lambda r: web.Response(text="Bot is running!"))
+    
+    # Start web server
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+    
+    print(f"Bot is running on port {PORT}")
+    
+    # Keep the app running
+    await web.TCPSite(runner).start()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
