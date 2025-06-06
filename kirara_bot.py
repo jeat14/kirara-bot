@@ -1,8 +1,13 @@
 from telegram.ext import Application, CommandHandler
 import logging
+import os
+import sys
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 TOKEN = "8007112570:AAEO65r0kq6nGD0UrFhIltcLZy-EVDVHOiY"
@@ -14,6 +19,7 @@ CHATS = set()
 async def start(update, context):
     chat_id = update.effective_chat.id
     CHATS.add(chat_id)
+    logger.info(f"New chat added: {chat_id}")
     
     if update.effective_user.username == ADMIN_USERNAME:
         await update.message.reply_text("Admin Commands:\n/broadcast - Send message\n/stats - View stats")
@@ -36,8 +42,10 @@ async def broadcast(update, context):
         try:
             await context.bot.send_message(chat_id=chat_id, text=message)
             success += 1
-        except:
+            logger.info(f"Message sent to {chat_id}")
+        except Exception as e:
             failed += 1
+            logger.error(f"Failed to send to {chat_id}: {e}")
     
     await update.message.reply_text(f"Message sent to {success} users")
 
@@ -47,18 +55,35 @@ async def stats(update, context):
     await update.message.reply_text(f"Total subscribers: {len(CHATS)}")
 
 def main():
-    # Create application
-    application = Application.builder().token(TOKEN).build()
-    
-    # Add handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("broadcast", broadcast))
-    application.add_handler(CommandHandler("stats", stats))
-    
-    # Start bot
-    logger.info("Starting bot...")
-    application.run_polling(poll_interval=3.0, drop_pending_updates=True)
-    logger.info("Bot stopped")
+    try:
+        # Delete webhook first
+        import requests
+        requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook")
+        
+        # Initialize bot with specific settings
+        application = (
+            Application.builder()
+            .token(TOKEN)
+            .concurrent_updates(False)
+            .build()
+        )
+        
+        # Add handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("broadcast", broadcast))
+        application.add_handler(CommandHandler("stats", stats))
+        
+        # Start the bot with specific settings
+        logger.info("Starting bot...")
+        application.run_polling(
+            drop_pending_updates=True,
+            allowed_updates=["message"],
+            stop_signals=None
+        )
+        
+    except Exception as e:
+        logger.error(f"Critical error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
