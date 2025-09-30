@@ -11,11 +11,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "8007112570:AAEZk2UqEp_HqCFYUKF7s0vM2gr4JEJLUP1"  # Replace with your actual token
+TOKEN = "8007112570:AAEZk2UqEp_HqCFYUKF7s0vM2gr4JEJLUP1" # Replace with your actual token
 ADMIN_USERNAME = "packoa"
 
 # Store user data
-USERS = {}  # {chat_id: {'username': str, 'joined': str, 'status': 'active/blocked'}}
+USERS = {} # {chat_id: {'username': str, 'joined': str, 'status': 'active/blocked'}}
 
 async def start(update, context):
     chat_id = update.effective_chat.id
@@ -32,6 +32,7 @@ async def start(update, context):
             "🔰 Admin Commands:\n\n"
             "📢 /broadcast - Send text message\n"
             "🎥 /sendvideo - Send video (Reply to video)\n"
+            "🎞️ /sendgif - Send GIF (Reply to GIF)\n"
             "📊 /stats - View detailed stats\n"
             "👥 /users - List all users\n"
             "🚫 /block <user_id> - Block user\n"
@@ -70,7 +71,6 @@ async def send_video(update, context):
     if not update.message.reply_to_message or not update.message.reply_to_message.video:
         await update.message.reply_text("Reply to a video with /sendvideo [caption]")
         return
-
     video = update.message.reply_to_message.video
     caption = ' '.join(context.args) if context.args else None
     
@@ -91,6 +91,34 @@ async def send_video(update, context):
                 logger.error(f"Failed to send video to {chat_id}: {e}")
     
     await update.message.reply_text(f"✅ Video sent to {success} users\n❌ Failed: {failed}")
+
+async def send_gif(update, context):
+    if update.effective_user.username != ADMIN_USERNAME:
+        return
+    
+    if not update.message.reply_to_message or not update.message.reply_to_message.animation:
+        await update.message.reply_text("Reply to a GIF with /sendgif [caption]")
+        return
+    gif = update.message.reply_to_message.animation
+    caption = ' '.join(context.args) if context.args else None
+    
+    success = 0
+    failed = 0
+    
+    for chat_id, user in USERS.items():
+        if user['status'] == 'active':
+            try:
+                await context.bot.send_animation(
+                    chat_id=int(chat_id),
+                    animation=gif.file_id,
+                    caption=caption
+                )
+                success += 1
+            except Exception as e:
+                failed += 1
+                logger.error(f"Failed to send GIF to {chat_id}: {e}")
+    
+    await update.message.reply_text(f"✅ GIF sent to {success} users\n❌ Failed: {failed}")
 
 async def stats(update, context):
     if update.effective_user.username != ADMIN_USERNAME:
@@ -169,6 +197,7 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("broadcast", broadcast))
         application.add_handler(CommandHandler("sendvideo", send_video))
+        application.add_handler(CommandHandler("sendgif", send_gif))
         application.add_handler(CommandHandler("stats", stats))
         application.add_handler(CommandHandler("users", list_users))
         application.add_handler(CommandHandler("block", block_user))
