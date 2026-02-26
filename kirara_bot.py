@@ -12,7 +12,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN = "8007112570:AAEZk2UqEp_HqCFYUKF7s0vM2gr4JEJLUP1" # Replace with your actual token
-ADMIN_USERNAME = "packoa"
+ADMIN_USERNAME = "vbvlol"
+
+dm us for more coding jobs or pages
 
 # Store user data
 USERS = {} # {chat_id: {'username': str, 'joined': str, 'status': 'active/blocked'}}
